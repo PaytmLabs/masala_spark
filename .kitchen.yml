@@ -1,0 +1,127 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  name: chef_zero
+  require_chef_omnibus: 12.5.1
+  environments_path: ./test/environments
+  data_bags_path: ./test/data_bags
+  client_rb:
+    environment: kitchen
+
+platforms:
+  - name: centos67
+    driver_config:
+      box: boxcutter/centos67
+    attributes:
+      system:
+        primary_interface: eth1
+  - name: centos71
+    driver_config:
+      box: boxcutter/centos71
+    attributes:
+      system:
+        primary_interface: enp0s8
+  - name: centos72
+    driver_config:
+      box: boxcutter/centos72
+    attributes:
+      system:
+        primary_interface: enp0s8
+  - name: ubuntu1404
+    driver_config:
+      box: boxcutter/ubuntu1404
+    attributes:
+      system:
+        primary_interface: eth1
+  - name: ubuntu1504
+    driver_config:
+      box: boxcutter/ubuntu1504
+    attributes:
+      system:
+        primary_interface: eth1
+  - name: debian82
+    driver_config:
+      box: boxcutter/debian82
+    attributes:
+      system:
+        primary_interface: eth1
+
+suites:
+  - name: master
+    run_list:
+      - recipe[masala_spark::master]
+    driver:
+      synced_folders:
+        - [".shared_data", "/shared", mount_options: ["dmode=777,fmode=666"]]
+      network:
+      - ["private_network", {ip: "10.10.10.11"}]
+      customize:
+        memory: 1536
+        cpus: 1
+    attributes:
+      system:
+        short_hostname: 'spark-master'
+        static_hosts:
+          10.10.10.11: spark-master.kitchen.masalatest.com
+          10.10.10.12: spark-worker1.kitchen.masalatest.com
+          10.10.10.13: spark-worker2.kitchen.masalatest.com
+      exhibitor:
+        cli:
+          hostname: 10.10.10.11
+          fsconfigdir: '/shared'
+      apache_spark:
+        standalone:
+          master_host: 10.10.10.11
+  - name: worker1
+    run_list:
+      - recipe[masala_spark::worker]
+    driver:
+      synced_folders:
+        - [".shared_data", "/shared", mount_options: ["dmode=777,fmode=666"]]
+      network:
+      - ["private_network", {ip: "10.10.10.12"}]
+      customize:
+        memory: 1536
+        cpus: 1
+    attributes:
+      system:
+        short_hostname: 'spark-worker1'
+        static_hosts:
+          10.10.10.11: spark-master.kitchen.masalatest.com
+          10.10.10.12: spark-worker1.kitchen.masalatest.com
+          10.10.10.13: spark-worker2.kitchen.masalatest.com
+      exhibitor:
+        cli:
+          hostname: 10.10.10.12
+          fsconfigdir: '/shared'
+      apache_spark:
+        standalone:
+          master_host: 10.10.10.11
+  - name: worker2
+    run_list:
+      - recipe[masala_spark::worker]
+    driver:
+      synced_folders:
+        - [".shared_data", "/shared", mount_options: ["dmode=777,fmode=666"]]
+      network:
+      - ["private_network", {ip: "10.10.10.13"}]
+      customize:
+        memory: 1536
+        cpus: 1
+    attributes:
+      system:
+        short_hostname: 'spark-worker2'
+        static_hosts:
+          10.10.10.11: spark-master.kitchen.masalatest.com
+          10.10.10.12: spark-worker1.kitchen.masalatest.com
+          10.10.10.13: spark-worker2.kitchen.masalatest.com
+      exhibitor:
+        cli:
+          hostname: 10.10.10.13
+          fsconfigdir: '/shared'
+      apache_spark:
+        standalone:
+          master_host: 10.10.10.11
+ 
